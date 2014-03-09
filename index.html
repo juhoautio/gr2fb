@@ -73,7 +73,7 @@
                 '</tr>' +
                 '</thead>' +
                 '<tbody>' +
-                '        <td><a href="http://graph.facebook.com/'+book.id+'">'+book.id+'</a></td>' +
+                '        <td><a href="https://graph.facebook.com/'+book.id+'">'+book.id+'</a></td>' +
                 '        <td><a href="'+book.url+'">'+book.url+'</a></td>' +
                 '</tbody>' +
                 '</table>' +
@@ -105,7 +105,7 @@
     function loadFacebookData() {
         FB.api('/me', function(response) {
             $('#logged_in_user')
-                    .html('<img id="user_image" src="http://graph.facebook.com/'+response.id+'/picture" style="max-height: 90%;" />');
+                    .html('<img id="user_image" src="https://graph.facebook.com/'+response.id+'/picture" style="max-height: 90%;" />');
             $('#logout_link')
                     .html('<a href="javascript:logout()">Not '+response.first_name+'?</a>');
         });
@@ -152,7 +152,7 @@
         /*
         // need to get isbn first
         var url = "https://www.goodreads.com/book/show/"+id+"?format=xml&key=wrif0GhRQXTEFaubBOJSmw";
-        $.get("http://query.yahooapis.com/v1/public/yql",
+        $.get("https://query.yahooapis.com/v1/public/yql",
             {
                 q: "select * from xml where " +
                         "url=\""+url+"\"",
@@ -204,7 +204,7 @@
                 "&key=wrif0GhRQXTEFaubBOJSmw";
 
         // BIG UP YAHOO!
-        $.get("http://query.yahooapis.com/v1/public/yql",
+        $.get("https://query.yahooapis.com/v1/public/yql",
             {
                 q: "select * from xml where " +
                         "url=\""+url+"\"",
