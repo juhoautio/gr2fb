@@ -1,0 +1,331 @@
+<!doctype html>
+<html class="no-js" lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>FB2Goodreads</title>
+        <link rel="stylesheet" href="css/foundation.css" />
+        <script src="js/vendor/modernizr.js"></script>
+    </head>
+<body>
+
+    <div id="fb-root"></div>
+    <script>
+
+    var permsNeeded = ['user_actions.books'];
+
+    window.fbAsyncInit = function() {
+        FB.init({
+            appId      : '232141180313326',
+            status     : true,
+            xfbml      : true
+        });
+        FB.Event.subscribe('auth.authResponseChange', function(response) {
+            if (response.status === 'connected') {
+                checkPermissions();
+                loadFacebookData();
+            } else {
+                FB.login(function(){
+                    loadFacebookData();
+                    location.reload();
+                }, {scope: permsNeeded.join(',')});
+            }
+        });
+    };
+
+    (function(d, s, id){
+        var js, fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) {return;}
+        js = d.createElement(s); js.id = id;
+        js.src = "//connect.facebook.net/en_US/all.js";
+        fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    function appendBook(book) {
+        FB.api('/'+book.id, function(book_response) {
+            var author = book_response.written_by;
+            if (!author) {
+                if ("data" in book_response) {
+                    more_data = book_response.data;
+                    if ("author" in more_data) {
+                        author = more_data.author.title;
+                    }
+                }
+                if (!author) {
+                    author = "";
+                }
+            }
+            // TODO also give author to search_goodreads()
+            $('#tr-'+book.id+'').append(
+                '<a href="#panel-'+book.id+'"><h5>'+book.title+'</h5><h3><small>'+author+'</small></h3></a>' +
+                '<div id="panel-'+book.id+'" class="content">' +
+                '<div id="results-'+book.id+'">' +
+                '</div>' +
+                '<table style="width:100%;">' +
+                '<thead>' +
+                '<tr>' +
+                '<th>Facebook ID</th>' +
+                '<th>Source</th>' +
+                '</tr>' +
+                '</thead>' +
+                '<tbody>' +
+                '        <td><a href="http://graph.facebook.com/'+book.id+'">'+book.id+'</a></td>' +
+                '        <td><a href="'+book.url+'">'+book.url+'</a></td>' +
+                '</tbody>' +
+                '</table>' +
+                '<a class="find_script" href="javascript:search_goodreads(\''+book.title+'\', \''+book.id+'\', \''+author+'\')" style="visibility: hidden;"></a></td>' +
+                '</div>'
+            );
+
+            // TODO how to show the table once all books have been added to it? with document.ready?
+            // table populated with at least one row – display it
+            $('#read_books').css('visibility', 'visible');
+        });
+    }
+
+    function loadBooks(link) {
+        FB.api(link, function(response) {
+            for (var i = 0; i < response.data.length; i++) {
+                var entry = response.data[i];
+                var book = entry.data.book;
+                $('#facebook_books_accordion').append('<dd id="tr-'+book.id+'"/>');
+                appendBook(book);
+            }
+            if (response.paging.next) {
+                // load next page as well
+                loadBooks(response.paging.next);
+            }
+        });
+    }
+
+    function loadFacebookData() {
+        FB.api('/me', function(response) {
+            $('#logged_in_user')
+                    .html('<img id="user_image" src="http://graph.facebook.com/'+response.id+'/picture" style="max-height: 90%;" />');
+            $('#logout_link')
+                    .html('<a href="javascript:logout()">Not '+response.first_name+'?</a>');
+        });
+        loadBooks('/me/books.reads?fields=data');
+    }
+
+    // Function that checks needed user permissions
+    var checkPermissions = function() {
+        FB.api('/me/permissions', function(response) {
+            var permsArray = response.data[0];
+            var permsToPrompt = [];
+            for (var i in permsNeeded) {
+                if (permsArray[permsNeeded[i]] == null) {
+                    permsToPrompt.push(permsNeeded[i]);
+                }
+            }
+            if (permsToPrompt.length > 0) {
+                promptForPerms(permsToPrompt);
+            }
+        });
+    };
+
+    // Re-prompt user for missing permissions
+    var promptForPerms = function(perms) {
+        FB.login(function(response) {
+        }, {scope: perms.join(',')});
+    };
+
+    var logout = function() {
+        FB.logout(function(response) {
+            // user is now logged out - reload page
+            location.reload();
+        });
+    };
+
+
+
+    //
+    // Goodreads stuff
+    //
+
+    var set_goodreads_widget = function(id) {
+
+        /*
+        // need to get isbn first
+        var url = "https://www.goodreads.com/book/show/"+id+"?format=xml&key=wrif0GhRQXTEFaubBOJSmw";
+        $.get("http://query.yahooapis.com/v1/public/yql",
+            {
+                q: "select * from xml where " +
+                        "url=\""+url+"\"",
+                format: "xml"
+            },
+            function(xml){
+                var book_node = $(xml).find('query').find('results').find('GoodreadsResponse')
+                        .find('book');
+                var isbn_node = book_node.find('> isbn');
+                // TODO really, jquery? no way to get CDATA with find+text?
+                var isbn = isbn_node.first().first().get(0).textContent;
+                console.log('retrieved isbn: ' + isbn);
+                if (!isbn) {
+                    isbn = id;
+                    console.log('Using id instead of isbn: ' + isbn);
+                }
+        */
+        // the widget seems to work with a goodreads id – no need to take risks with isbn :)
+        var isbn = id;
+        $('#goodreads_widget_container').html(
+            ' <div id="gr_add_to_books">' +
+                '<div class="gr_custom_each_container_">' +
+                '<a href="https://www.goodreads.com/book/isbn/'+isbn+'" style="border:none" target="_blank">' +
+                '<img alt="Add book" src="https://www.goodreads.com/images/atmb_add_book-70x25.png" />' +
+                '</a>' +
+                '</div>' +
+                '</div>' +
+                '<script src="https://www.goodreads.com/book/add_to_books_widget_frame/'+isbn+'?atmb_widget%5Bbutton%5D=atmb_widget_1.png" type="text/javascript" />'
+        );
+        $('html, body').animate({
+            scrollTop: $("#goodreads_widget_container").offset().top - 300
+        }, 500);
+        /*
+            }
+        );
+        */
+    };
+
+    var search_goodreads = function(title, fbid, author) {
+
+        // reset the search results in modal
+        $('#found_books').html('');
+        $('#goodreads_widget_container').html('');
+
+        // unfortunately goodreads API doesn't allow searching with author & title in a semantic way
+        var url = "https://www.goodreads.com/search.xml" +
+                "?q="+encodeURIComponent(title + ' ' + author) +
+                "&search_type=books" +
+                "&key=wrif0GhRQXTEFaubBOJSmw";
+
+        // BIG UP YAHOO!
+        $.get("http://query.yahooapis.com/v1/public/yql",
+            {
+                q: "select * from xml where " +
+                        "url=\""+url+"\"",
+                format: "xml"
+            },
+            function(xml){
+                var res = $(xml).find('query').find('results').find('GoodreadsResponse');
+                if (res) {
+                    var books = res.find('search').find('results').find('work');
+                    var modal = $('#search_results_container').detach();
+                    $('#results-' + fbid).append(modal);
+                    // moved, show now
+                    $('#search_results_container').css('visibility', 'visible');
+                    if (books.length == 0) {
+                        $('#found_books').append('<li><p>Sorry, no results for <em>'+title+'</em></p></li>');
+                    }
+                    // "else":
+                    books.each(function(index){
+                        var best_book = $(this).find('best_book');
+                        var img = $(best_book).find('image_url').text();
+                        if (img) {
+                            // '> id' means: just the immediate id
+                            var id = $(best_book).find('> id').first().text();
+                            var year = $(this).find('> original_publication_year').first().text();
+                            if (year) {
+                                year = '(' + year + ')';
+                            } else {
+                                year = '';
+                            }
+                            var title = $(best_book).find('> title').first().text();
+                            var author = $(best_book).find('> author').find('> name').first().text();
+                            var author_id = $(best_book).find('> author').find('> id').first().text();
+                            var goodreads_link = "https://www.goodreads.com/book/show/"+id;
+                            var author_link = "https://www.goodreads.com/author/show/"+author_id;
+                            $('#found_books').append(
+                                '<li>' +
+                                '<div class="panel" data-equalizer-watch="" style="height: 295px;">'+
+                                '<h5 class="subheader"><a target="_blank" href="'+goodreads_link+'">'+title+' <small>'+year+'</small></a></h5>' +
+                                '<h6 class="subheader"><a target="_blank" href="'+author_link+'">'+author+'</a></h6>' +
+                                '<ul class="small-block-grid-2">' +
+                                    '<li>' +
+                                    '<a href="'+goodreads_link+'">' +
+                                        '<img style="max-height: 50%;" alt="See book in Goodreads" src="'+img+'"/>' +
+                                    '</a>' +
+                                    '</li>' +
+                                    '<li>' +
+                                    '' +
+                                        '<p><a href="javascript:set_goodreads_widget('+id+')" class="medium success button">Add..</a><br/></p>' +
+                                    '</li>' +
+                                '</ul>' +
+                                '</li>');
+                        }
+                    });
+                } else {
+                    // TODO handle somehow
+                    alert("Error");
+                }
+            }
+        );
+    }
+
+    </script>
+
+    <nav class="top-bar" data-topbar data-options="is_hover: false">
+        <ul class="title-area">
+            <li class="name">
+                <h1><a href="#">FB2Goodreads</a></h1>
+            </li>
+            <li class="toggle-topbar menu-icon"><a href="#">Menu</a></li>
+        </ul>
+
+        <section class="top-bar-section">
+            <!-- Right Nav Section -->
+            <ul class="right">
+                <li class="has-dropdown">
+                    <a href="#" id="logged_in_user"></a>
+                    <ul class="dropdown">
+                        <li id="logout_link"><a href="#"></a></li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+    </nav>
+
+    <div class="row">
+        <div class="large-12 columns">
+            <h1> </h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="large-12 columns">
+            <div class="panel">
+                <h3>Import read books <em>from</em> Facebook to Goodreads</h3>
+                <!-- TODO: could just retrieve each book with a 1s interval -->
+                <h5 class="subheader">Each book is searched when the title is clicked. This is because Goodreads API
+                    is only allowed to be called once per second.
+                </h5>
+                <h5 class="subheader">Sometimes an image is not shown here, even though it is on
+                    Goodreads. That is because sometimes the API doesn't return them.
+                </h5>
+                <hr/>
+                <div id="search_results_container" style="visibility: hidden">
+                    <ul id="found_books" class="small-block-grid-3">
+                    </ul>
+                    <div id="goodreads_widget_container"></div>
+                </div>
+                <h3>Your Facebook books</h3>
+                <dl id="facebook_books_accordion" class="accordion" data-accordion></dl>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/vendor/jquery.js"></script>
+    <script src="js/foundation.min.js"></script>
+    <script>
+        $(document).foundation();
+        $(".accordion").on("click", "dd:not(.active)", function (original) {
+            original = $(this);
+            // "click" the hidden link:
+            var script = $(original).find('.content').find('.find_script').get(0).href;
+            if (script) {
+                window.location = script;
+            }
+        });
+    </script>
+</body>
+</html>
