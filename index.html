@@ -45,6 +45,10 @@
         fjs.parentNode.insertBefore(js, fjs);
     }(document, 'script', 'facebook-jssdk'));
 
+    function escape_quotes(input) {
+        return input.replace(/'/g, "\\'").replace(/"/g, "\\\"");
+    }
+
     function appendBook(book) {
         FB.api('/'+book.id, function(book_response) {
             var author = book_response.written_by;
@@ -59,7 +63,7 @@
                     author = "";
                 }
             }
-            // TODO also give author to search_goodreads()
+
             $('#tr-'+book.id+'').append(
                 '<a href="#panel-'+book.id+'"><h5>'+book.title+'</h5><h3><small>'+author+'</small></h3></a>' +
                 '<div id="panel-'+book.id+'" class="content">' +
@@ -77,7 +81,7 @@
                 '        <td><a href="'+book.url+'">'+book.url+'</a></td>' +
                 '</tbody>' +
                 '</table>' +
-                '<a class="find_script" href="javascript:search_goodreads(\''+book.title+'\', \''+book.id+'\', \''+author+'\')" style="visibility: hidden;"></a></td>' +
+                '<a class="find_script" href="javascript:search_goodreads(\''+escape_quotes(book.title)+'\', \''+book.id+'\', \''+escape_quotes(author)+'\')" style="visibility: hidden;"></a></td>' +
                 '</div>'
             );
 
