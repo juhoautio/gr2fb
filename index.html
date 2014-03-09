@@ -23,10 +23,12 @@
         FB.Event.subscribe('auth.authResponseChange', function(response) {
             if (response.status === 'connected') {
                 $('#fb_login_container').hide();
+                $('#book_list_header').css('visibility', 'visible');
                 checkPermissions();
                 loadFacebookData();
             } else {
                 $('#fb_login_container').show();
+                $('#book_list_header').css('visibility', 'hidden');
                 FB.login(function(){
                     loadFacebookData();
                     location.reload();
@@ -311,10 +313,17 @@
                     <div id="goodreads_widget_container"></div>
                 </div>
                 <div id="fb_login_container">
+                    <ul id="found_books" class="small-block-grid-3">
+                        <li>
                     <h5 class="subheader">To get started, login with Facebook:</h5>
-                    <fb:login-button show-faces="true" width="200" max-rows="1"></fb:login-button>
+                        </li><li>
+                    <fb:login-button show-faces="true" width="200" max-rows="1" size="large"></fb:login-button>
+                        </li>
+                    </ul>
                 </div>
-                <h3>Your Facebook books</h3>
+                <div id="book_list_header" style="visibility: hidden">
+                    <h3>Your Facebook books</h3>
+                </div>
                 <dl id="facebook_books_accordion" class="accordion" data-accordion></dl>
             </div>
         </div>
