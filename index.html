@@ -22,9 +22,11 @@
         });
         FB.Event.subscribe('auth.authResponseChange', function(response) {
             if (response.status === 'connected') {
+                $('#fb_login_container').hide();
                 checkPermissions();
                 loadFacebookData();
             } else {
+                $('#fb_login_container').show();
                 FB.login(function(){
                     loadFacebookData();
                     location.reload();
@@ -307,6 +309,10 @@
                     <ul id="found_books" class="small-block-grid-3">
                     </ul>
                     <div id="goodreads_widget_container"></div>
+                </div>
+                <div id="fb_login_container">
+                    <h5 class="subheader">To get started, login with Facebook:</h5>
+                    <fb:login-button show-faces="true" width="200" max-rows="1"></fb:login-button>
                 </div>
                 <h3>Your Facebook books</h3>
                 <dl id="facebook_books_accordion" class="accordion" data-accordion></dl>
