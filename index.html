@@ -95,7 +95,7 @@
                 $('#facebook_books_accordion').append('<dd id="tr-'+book.id+'"/>');
                 appendBook(book);
             }
-            if (response.paging.next) {
+            if (response.paging && response.paging.next) {
                 // load next page as well
                 loadBooks(response.paging.next);
             }
