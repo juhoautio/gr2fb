@@ -198,7 +198,18 @@
         */
     };
 
+    var scrollToFoundBooks = function() {
+        $('html, body').animate({
+            scrollTop: $("#found_books").offset().top - 100
+        }, 500);
+    };
+
     var search_goodreads = function(title, fbid, author) {
+
+        var results_div = $('#results-' + fbid);
+        $('html, body').animate({
+            scrollTop: results_div.offset().top - 100
+        }, 500);
 
         // reset the search results in modal
         $('#found_books').html('');
@@ -221,10 +232,10 @@
                 var res = $(xml).find('query').find('results').find('GoodreadsResponse');
                 if (res) {
                     var books = res.find('search').find('results').find('work');
-                    var modal = $('#search_results_container').detach();
-                    $('#results-' + fbid).append(modal);
+                    var container = $('#search_results_container').detach();
+                    results_div.append(container);
                     // moved, show now
-                    $('#search_results_container').css('visibility', 'visible');
+                    container.css('visibility', 'visible');
                     if (books.length == 0) {
                         $('#found_books').append('<li><p>Sorry, no results for <em>'+title+'</em></p></li>');
                     }
@@ -265,6 +276,7 @@
                                 '</li>');
                         }
                     });
+                    scrollToFoundBooks();
                 } else {
                     // TODO handle somehow
                     alert("Error");
